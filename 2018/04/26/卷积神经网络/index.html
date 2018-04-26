@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next muse use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="Hexo, NexT" />
+
+
+
+
+
+  <link rel="alternate" href="/atom.xml" title="蛤鑫和他的一帮小弟" type="application/atom+xml" />
+
+
+
+
+
+
+<meta name="description" content="申明:这篇文章是阅读了medium给我进行推荐的一篇文章后写的总结材料，原文章在这里。  链式法则 如果你理解了链式法则，那么我们可以继续了。 卷积神经网络下面先给出一些结论，假设我们输入的某一层的数据长宽是$H \times W$,核的大小是$k$(假设核是正方形的),然后padding的大小是$p$,移动的步伐stride是$s$,那么我们下一层得到的数据的$h$是$$\frac{H-k+2">
+<meta property="og:type" content="article">
+<meta property="og:title" content="卷积神经网络中的反向传播(概念+代码)">
+<meta property="og:url" content="http://qingfenghcy.github.io/2018/04/26/卷积神经网络/index.html">
+<meta property="og:site_name" content="蛤鑫和他的一帮小弟">
+<meta property="og:description" content="申明:这篇文章是阅读了medium给我进行推荐的一篇文章后写的总结材料，原文章在这里。  链式法则 如果你理解了链式法则，那么我们可以继续了。 卷积神经网络下面先给出一些结论，假设我们输入的某一层的数据长宽是$H \times W$,核的大小是$k$(假设核是正方形的),然后padding的大小是$p$,移动的步伐stride是$s$,那么我们下一层得到的数据的$h$是$$\frac{H-k+2">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://qingfenghcy.github.io/lhx/convNet/8.png">
+<meta property="og:image" content="http://qingfenghcy.github.io/lhx/convNet/2.png">
+<meta property="og:image" content="http://qingfenghcy.github.io/lhx/convNet/9.gif">
+<meta property="og:image" content="http://qingfenghcy.github.io/lhx/convNet/3.jpg">
+<meta property="og:image" content="http://qingfenghcy.github.io/lhx/convNet/4.jpg">
+<meta property="og:image" content="http://qingfenghcy.github.io/lhx/convNet/5.jpg">
+<meta property="og:image" content="http://qingfenghcy.github.io/lhx/convNet/1.gif">
+<meta property="og:updated_time" content="2018-04-26T08:12:40.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="卷积神经网络中的反向传播(概念+代码)">
+<meta name="twitter:description" content="申明:这篇文章是阅读了medium给我进行推荐的一篇文章后写的总结材料，原文章在这里。  链式法则 如果你理解了链式法则，那么我们可以继续了。 卷积神经网络下面先给出一些结论，假设我们输入的某一层的数据长宽是$H \times W$,核的大小是$k$(假设核是正方形的),然后padding的大小是$p$,移动的步伐stride是$s$,那么我们下一层得到的数据的$h$是$$\frac{H-k+2">
+<meta name="twitter:image" content="http://qingfenghcy.github.io/lhx/convNet/8.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Muse',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://qingfenghcy.github.io/2018/04/26/卷积神经网络/"/>
+
+
+
+
+
+  <title>卷积神经网络中的反向传播(概念+代码) | 蛤鑫和他的一帮小弟</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">蛤鑫和他的一帮小弟</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://qingfenghcy.github.io/2018/04/26/卷积神经网络/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Chunyu Hao">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="蛤鑫和他的一帮小弟">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">卷积神经网络中的反向传播(概念+代码)</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-04-26T08:12:56+00:00">
+                2018-04-26
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+            <span class="post-meta-divider">|</span>
+            <span class="page-pv"><i class="fa fa-file-o">热度</i>
+            <span class="busuanzi-value" id="busuanzi_value_page_pv" ></span>°C
+            </span>
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <blockquote>
+<p>申明:这篇文章是阅读了medium给我进行推荐的一篇文章后写的总结材料，原文章在<a href="https://becominghuman.ai/back-propagation-in-convolutional-neural-networks-intuition-and-code-714ef1c38199" target="_blank" rel="noopener">这里</a>。</p>
+</blockquote>
+<h3 id="链式法则"><a href="#链式法则" class="headerlink" title="链式法则"></a>链式法则</h3><p><center><img src="/lhx/convNet/8.png" alt=""></center><br><br></p>
+<p><center><img src="/lhx/convNet/2.png" alt=""></center><br>如果你理解了链式法则，那么我们可以继续了。</p>
+<h2 id="卷积神经网络"><a href="#卷积神经网络" class="headerlink" title="卷积神经网络"></a>卷积神经网络</h2><p>下面先给出一些结论，假设我们输入的某一层的数据长宽是$H \times W$,核的大小是$k$(假设核是正方形的),然后padding的大小是$p$,移动的步伐stride是$s$,那么我们下一层得到的数据的$h$是$$\frac{H-k+2p}{s} + 1$$同理下一层得到的数据的$w$是$$\frac{W-k+2p}{s} + 1$$</p>
+<h3 id="正向传播"><a href="#正向传播" class="headerlink" title="正向传播"></a>正向传播</h3><p>为了理解卷积神经网络中的反向传播，我们假设输入输出的通道数是1。<br><br>下面的卷积图用了$3 \times 3$大小的输入数据，同时用了$2 \times 2$的卷积核，每次移动(stride)1步，并且没有padding填充，那么根据上面的公式，我们可以算出来这层经过卷积后输出数据的大小是$2 \times 2$的。为了理解反向传播，我们首先来看看正向传播是怎么样工作的。</p>
+<p><center><img src="/lhx/convNet/9.gif" alt=""></center><br>如图我们可以清楚的看到在进行正向卷积运算的全过程。</p>
+<p><center><img src="/lhx/convNet/3.jpg" alt=""></center></p>
+<p><center><img src="/lhx/convNet/4.jpg" alt=""></center><br><br></p>
+<h3 id="反向传播"><a href="#反向传播" class="headerlink" title="反向传播"></a>反向传播</h3><p>在继续之前，让我们先来做一些约定.</p>
+<p><center><img src="/lhx/convNet/5.jpg" alt=""></center><br>现在，让我们来实现反向传播算法，我们可以假设从后面一层穿回来的梯度误差是$\partial h$,然后我们要计算这一层中的导数$\partial x和\partial w$,为什么呢？因为计算$\partial w$可以让我们通过这一次反向传播更新这一层的参数$w$,而计算$\partial x$是因为这一层的数据是通过上一层计算得来的，所以要把梯度传回去，我们需要借助$x$这个媒介(如果是最开始的输入数据，比如第0层，就没必要计算了)。<br><br><br>这一层的每一个$w$参与计算了输出层的每一个$h$，所以说在更新每一个$w$的时候，要叠加传回来的所有$dh$的误差。如图所示。</p>
+<p><center><img src="/lhx/convNet/1.gif" alt=""></center><br>接下来让我们一起来实现正向和反向传播算法.首先是导入数据<br><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> numpy <span class="keyword">as</span> np</span><br><span class="line">np.random.seed(<span class="number">42</span>)</span><br><span class="line"></span><br><span class="line">X = np.array([[<span class="number">1</span>,<span class="number">2</span>,<span class="number">3</span>],</span><br><span class="line">            [<span class="number">4</span>,<span class="number">5</span>,<span class="number">6</span>],</span><br><span class="line">            [<span class="number">7</span>,<span class="number">8</span>,<span class="number">9</span>]])</span><br><span class="line">w = np.ones((<span class="number">2</span>,<span class="number">2</span>))</span><br></pre></td></tr></table></figure></p>
+<p>然后进行正向传播<br><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">forward</span><span class="params">(X, w)</span>:</span></span><br><span class="line">    <span class="comment">#得到长宽</span></span><br><span class="line">    height, width = X.shape</span><br><span class="line">    <span class="comment">#得到核的大小</span></span><br><span class="line">    kernel_size = w.shape[<span class="number">0</span>]</span><br><span class="line">    <span class="comment">#根据公式算新的高度和宽度</span></span><br><span class="line">    new_height = (height - kernel_size) + <span class="number">1</span> </span><br><span class="line">    new_width = (width - kernel_size) + <span class="number">1</span></span><br><span class="line">    </span><br><span class="line">    <span class="comment">#创建输出数据</span></span><br><span class="line">    out = np.zeros((new_height, new_width))</span><br><span class="line">    </span><br><span class="line">    <span class="comment">#卷积过程</span></span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> range(new_height):</span><br><span class="line">        <span class="keyword">for</span> j <span class="keyword">in</span> range(new_width):</span><br><span class="line">            <span class="comment">#得到框里的数据</span></span><br><span class="line">            box = X[i:i+kernel_size, j:j+kernel_size]</span><br><span class="line">            <span class="comment">#点积</span></span><br><span class="line">            out[i][j] = np.sum(w * box)</span><br><span class="line">    </span><br><span class="line">    <span class="comment">#将X和w存储起来，计算梯度的时候要用，还记得我们计算w的梯度的时候，每个框里的x和dh相乘吗？所以要把X存储起来</span></span><br><span class="line">    cache = [X, w]</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">return</span> out, cache</span><br></pre></td></tr></table></figure></p>
+<p>传播<br><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">out, cache = forward(X, w)</span><br><span class="line">print(out)</span><br></pre></td></tr></table></figure></p>
+<p>输出是<br>array([[ 12.,  16.],<br>       [ 24.,  28.]])<br>我们可以手动计算来看一下，这是正确的。<br>然后进行反向传播<br><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#这里我们只计算dw</span></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">backward</span><span class="params">(dH, cache)</span>:</span></span><br><span class="line">    <span class="comment">#得到X</span></span><br><span class="line">    X, w = cache</span><br><span class="line">    new_height, new_width = dH.shape</span><br><span class="line">    kernel_size = w.shape[<span class="number">0</span>]</span><br><span class="line">    </span><br><span class="line">    <span class="comment">#dw大小和w相同</span></span><br><span class="line">    dw = np.zeros_like(w)</span><br><span class="line">    <span class="comment">#进行反向传播</span></span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> range(new_height):</span><br><span class="line">        <span class="keyword">for</span> j <span class="keyword">in</span> range(new_width):</span><br><span class="line">            <span class="comment">#同理在X中得到框里的数据</span></span><br><span class="line">            box = X[i:i+kernel_size, j:j+kernel_size]</span><br><span class="line">            dw += box * dH[i][j]</span><br><span class="line">                </span><br><span class="line">    <span class="keyword">return</span> dw</span><br></pre></td></tr></table></figure></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#假设传回来的梯度都是1</span></span><br><span class="line">dH = np.ones_like(out)</span><br></pre></td></tr></table></figure>
+<p>传播<br><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">dw = backward(dH, cache)</span><br><span class="line">print(dw)</span><br></pre></td></tr></table></figure></p>
+<p>array([[ 12.,  16.],<br>       [ 24.,  28.]])<br>通过手动计算，我们可以计算得出此梯度是正确的.<br><br><br>到此为止，我们就学会了卷积神经网络中的梯度流动。</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+  <div>
+    
+    <div style="text-align:center;color: #ccc;font-size:15px;">-------------本文结束<i class="fa fa-paw"></i>感谢您的阅读-------------</div>
+
+
+  </div>
+     
+
+    
+
+    
+
+    
+
+    <div>
+	    <p id="div-border-left-red">
+	   <b>本文基于<a target="_blank" title="Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)" href="http://creativecommons.org/licenses/by-sa/4.0/"> 知识共享署名-相同方式共享 4.0 </a>国际许可协议发布</b><br/>
+	    <span>
+	    <b>本文地址：</b><a href="/2018/04/26/卷积神经网络/" title="卷积神经网络中的反向传播(概念+代码)">http://qingfenghcy.github.io/2018/04/26/卷积神经网络/</a><br/><b>转载请注明出处，谢谢！</b>
+	    </span>
+	    </p>
+</div>
+
+    <footer class="post-footer">
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2018/04/26/反向传播/" rel="prev" title="线性回归(原理+代码实现)">
+                线性回归(原理+代码实现) <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name">Chunyu Hao</p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">2</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+
+            
+
+          </nav>
+
+          
+            <div class="feed-link motion-element">
+              <a href="/atom.xml" rel="alternate">
+                <i class="fa fa-rss"></i>
+                RSS
+              </a>
+            </div>
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#链式法则"><span class="nav-number">1.</span> <span class="nav-text">链式法则</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#卷积神经网络"><span class="nav-number"></span> <span class="nav-text">卷积神经网络</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#正向传播"><span class="nav-number">1.</span> <span class="nav-text">正向传播</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#反向传播"><span class="nav-number">2.</span> <span class="nav-text">反向传播</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2018</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Chunyu Hao</span>
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Muse</a> v5.1.4</div>
+
+
+
+
+        
+<div class="busuanzi-count">
+  <script async src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+    <span class="site-uv">
+      <i class="fa fa-user">总访客数</i>
+      <span class="busuanzi-value" id="busuanzi_value_site_uv"></span>
+      人
+    </span>
+  
+
+  
+    <span class="site-pv">
+      <i class="fa fa-eye">总访问量</i>
+      <span class="busuanzi-value" id="busuanzi_value_site_pv"></span>
+      次
+    </span>
+  
+</div>
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+  
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {
+          inlineMath: [ ['$','$'], ["\\(","\\)"]  ],
+          processEscapes: true,
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+      });
+    </script>
+
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax(), i;
+        for (i=0; i < all.length; i += 1) {
+          all[i].SourceElement().parentNode.className += ' has-jax';
+        }
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.bootcss.com/mathjax/2.7.1/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  
+
+
+  
+
+  
+
+  
+</body>
+</html>
